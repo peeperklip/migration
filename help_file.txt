@@ -1,0 +1,8 @@
+Usage: go cli/migrations.go [COMMAND]
+
+Available commands:
+    generate        This generates a new migration
+    migrate         Run the migrations
+    down            Undo a specific migration according to down.sql
+    revert_to       Undo all migrations according to down.sql until, but >not< including the specified migration
+    status          Warn about any migration that hasn't run
