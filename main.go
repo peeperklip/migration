@@ -2,14 +2,14 @@ package main
 
 import (
 	"fmt"
+	_ "github.com/lib/pq"
 	"os"
 )
 
 func main() {
 	args := os.Args
-
 	if len(args) == 1 {
-		contents, _ := os.ReadFile("cli/help_file.txt")
+		contents, _ := os.ReadFile("help_file.txt")
 		fmt.Print(string(contents))
 
 		return
