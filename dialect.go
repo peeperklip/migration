@@ -1,4 +1,4 @@
-package main
+package migrations
 
 func GetCreateTableByDialect(dialect string) string {
 	switch dialect {
