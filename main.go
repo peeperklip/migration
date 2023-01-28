@@ -7,6 +7,10 @@ import (
 	"os"
 )
 
+func main() {
+
+}
+
 func Init(db *sql.DB) {
 	args := os.Args
 	if len(args) == 1 {
