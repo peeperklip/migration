@@ -9,13 +9,20 @@ import (
 	"time"
 )
 
+// Keeping an eye on this struct. It and its logic seem to be growing and being more all over the place...
 type migration struct {
 	Sql     *sql.DB
 	dialect string
+	baseDir string
 }
 
-func NewMigration(sql *sql.DB, dialect string) *migration {
-	return &migration{Sql: sql, dialect: dialect}
+func NewMigration(sql *sql.DB, dialect string, baseDir string) *migration {
+	//Append a '/' if the string is not empty and doesn't already end with a '/'.
+	//This is to avoid files/dirs are created/read in and from unexpected places
+	if baseDir != "" && baseDir[len(baseDir)-1:] != "/" {
+		baseDir += "/"
+	}
+	return &migration{Sql: sql, dialect: dialect, baseDir: baseDir}
 }
 
 //type DatabaseHandle interface {
@@ -51,6 +58,7 @@ func (mig migration) getRanMigrations() []int64 {
 	return ranMigrations
 
 }
+
 func (mig migration) prepareMigrationsTable() {
 	_, _ = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
 }
@@ -68,18 +76,19 @@ func (mig migration) GenerateMigration() {
 	currentTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	migrationDirName := fmt.Sprintf("migrations/%s", currentTimestamp)
 
-	if _, err := os.Stat("migrations"); os.IsNotExist(err) {
-		_ = os.Mkdir("migrations", 0771)
-	}
-	if _, err := os.Stat(migrationDirName); os.IsNotExist(err) {
-		_ = os.Mkdir(migrationDirName, 0771)
-	}
+	mig.ensureDirExists("migrations")
+	mig.ensureDirExists(migrationDirName)
 
-	_, _ = os.Create(fmt.Sprintf("%s/up.sql", migrationDirName))
-	_, _ = os.Create(fmt.Sprintf("%s/down.sql", migrationDirName))
+	upMigFilename := fmt.Sprintf("%s/up.sql", migrationDirName)
+	downMigFilename := fmt.Sprintf("%s/up.sql", migrationDirName)
+
+	mig.createEmptyFile(upMigFilename)
+	mig.createEmptyFile(downMigFilename)
+
 }
 func (mig migration) RunMigrations() {
-	dir, err := os.ReadDir("migrations")
+	mig.ensureDirExists("migrations")
+	dir, err := mig.readDir("migrations")
 	if err != nil {
 		return
 	}
@@ -100,9 +109,9 @@ func (mig migration) RunMigrations() {
 			continue
 		}
 
-		if mig.HasMigrationRan(value.Name()) == false {
+		if !mig.HasMigrationRan(value.Name()) {
 
-			migrationFile, _ := os.ReadFile(fmt.Sprintf("%s/%s/up.sql", "migrations", value.Name()))
+			migrationFile := mig.readFile(value.Name())
 
 			fmt.Println("Currently executing: " + value.Name())
 			_, err := mig.Sql.Exec(string(migrationFile))
@@ -119,6 +128,30 @@ func (mig migration) RunMigrations() {
 			}
 		}
 	}
+}
+
+// Consider moving to its own context (file and receiver)
+func (mig migration) ensureDirExists(dir string) {
+	dir = fmt.Sprintf("%s%s", mig.baseDir, dir)
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		_ = os.Mkdir(dir, 0771)
+	}
+}
+
+func (mig migration) createEmptyFile(filePath string) {
+	filePath = fmt.Sprintf("%s%s", mig.baseDir, filePath)
+	_, _ = os.Create(filePath)
+}
+
+func (mig migration) readDir(dir string) ([]os.DirEntry, error) {
+	dir = fmt.Sprintf("%s%s", mig.baseDir, dir)
+	return os.ReadDir(dir)
+}
+
+func (mig migration) readFile(migrationFile string) []byte {
+	migrationFileContents, _ := os.ReadFile(fmt.Sprintf("%s%s/%s/up.sql", mig.baseDir, "migrations", migrationFile))
+
+	return migrationFileContents
 }
 
 func (mig migration) closeConnection() {
