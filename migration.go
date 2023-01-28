@@ -36,15 +36,22 @@ func (mig migration) getRanMigrations() []int64 {
 	}
 
 	defer func(result *sql.Rows) {
-		_ = result.Close()
+		err = result.Close()
+		if err != nil {
+			fmt.Println(err)
+		}
 	}(result)
 
 	for result.Next() {
 		var currentMigration int64
-		_ = result.Scan(&currentMigration)
+		err = result.Scan(&currentMigration)
 		{
 			ranMigrations = append(ranMigrations, currentMigration)
 		}
+		if err != nil {
+			fmt.Println(err)
+		}
+
 	}
 
 	return ranMigrations
@@ -52,7 +59,11 @@ func (mig migration) getRanMigrations() []int64 {
 }
 
 func (mig migration) prepareMigrationsTable() {
-	_, _ = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
+	_, err := mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 func (mig migration) HasMigrationRan(migrationToCheck string) bool {
 	for _, item := range mig.getRanMigrations() {
@@ -121,14 +132,26 @@ func (mig migration) RunMigrations() {
 // Consider moving to its own context (file and receiver)
 func (mig migration) ensureDirExists(dir string) {
 	dir = fmt.Sprintf("%s%s", mig.baseDir, dir)
+
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		_ = os.Mkdir(dir, 0771)
+		if err != nil {
+			fmt.Println(err)
+		}
+		err = os.Mkdir(dir, 0771)
+		if err != nil {
+			fmt.Println(err)
+		}
 	}
+
 }
 
 func (mig migration) createEmptyFile(filePath string) {
 	filePath = fmt.Sprintf("%s%s", mig.baseDir, filePath)
-	_, _ = os.Create(filePath)
+	_, err := os.Create(filePath)
+
+	if err != nil {
+		fmt.Println(err)
+	}
 }
 
 func (mig migration) readDir(dir string) ([]os.DirEntry, error) {
@@ -137,7 +160,9 @@ func (mig migration) readDir(dir string) ([]os.DirEntry, error) {
 }
 
 func (mig migration) readFile(migrationFile string) []byte {
-	migrationFileContents, _ := os.ReadFile(fmt.Sprintf("%s%s/%s/up.sql", mig.baseDir, "migrations", migrationFile))
-
+	migrationFileContents, err := os.ReadFile(fmt.Sprintf("%s%s/%s/up.sql", mig.baseDir, "migrations", migrationFile))
+	if err != nil {
+		fmt.Println(err)
+	}
 	return migrationFileContents
 }
