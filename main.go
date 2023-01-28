@@ -6,7 +6,7 @@ import (
 	"os"
 )
 
-func main() {
+func Init() {
 	args := os.Args
 	if len(args) == 1 {
 		contents, _ := os.ReadFile("help_file.txt")
