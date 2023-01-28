@@ -1,14 +1,13 @@
 package migrations
 
 import (
-	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
 	"os"
 	"text/tabwriter"
 )
 
-func Init(db *sql.DB) {
+func Init(migrate migration) {
 	args := os.Args
 
 	if len(args) == 1 {
@@ -18,17 +17,15 @@ func Init(db *sql.DB) {
 
 	command := args[1]
 
-	newMig := NewMigration(db, "postgress", "../")
-
 	switch command {
 
 	case "generate":
 
-		newMig.GenerateMigration()
+		migrate.GenerateMigration()
 		break
 
 	case "migrate":
-		newMig.RunMigrations()
+		migrate.RunMigrations()
 		break
 
 	case "down":

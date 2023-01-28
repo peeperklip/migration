@@ -7,10 +7,10 @@ Initially started within a separate project of mine because of a desire for a mi
 Made public for my own testing/developing purposes as it's slightly less of a hassle to `go get` a public repository
 
 ### Architecture:
-main.go:main is the entry point for the CLI
-dialect.go will eventually be used to support multiple SQL dialects
-migration.go holds all the logic for managing migrations
-dbUtils.go in there to do more supporting tasks
+<b>main.go</b> Is the entry point for the CLI<br>
+<b>dialect.go</b> Will eventually be used to support multiple SQL dialects<br>
+<b>migration.go</b> Holds all the logic for managing migrations<br>
+<b>dbUtils.go</b> In there to do more supporting tasks<br>
 
 ### Codestyle:
 structs go first, interfaces second, then the methods, then general functions. Besides that it's pretty much just `gofmt .`
