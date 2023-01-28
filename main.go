@@ -18,7 +18,7 @@ func Init(db *sql.DB) {
 
 	command := args[1]
 
-	newMig := NewMigration(db, "postgress")
+	newMig := NewMigration(db, "postgress", "../")
 
 	switch command {
 
