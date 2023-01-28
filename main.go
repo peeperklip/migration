@@ -13,8 +13,14 @@ func main() {
 
 func Init(db *sql.DB) {
 	args := os.Args
+
 	if len(args) == 1 {
-		contents, _ := os.ReadFile("help_file.txt")
+		contents, err := os.ReadFile("help_file.txt")
+
+		if err != nil {
+			fmt.Println(err)
+		}
+
 		fmt.Print(string(contents))
 
 		return
