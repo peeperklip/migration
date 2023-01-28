@@ -6,8 +6,6 @@ Initially started within a separate project of mine because of a desire for a mi
 
 Made public for my own testing/developing purposes as it's slightly less of a hassle to `go get` a public repository
 
-[All updates are being done in the develop branch](https://github.com/peeperklip/migration/tree/develop)
-
 ### Architecture:
 main.go:main is the entry point for the CLI
 dialect.go will eventually be used to support multiple SQL dialects
@@ -19,6 +17,6 @@ structs go first, interfaces second, then the methods, then general functions. B
 
 ### Go get
 ```shell
-go get https://github.com/peeperklip/migration@develop
+go get https://github.com/peeperklip/migration@{COMMIT_HASH}
 # add the -u flag for updating
 ```

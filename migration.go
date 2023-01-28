@@ -25,14 +25,6 @@ func NewMigration(sql *sql.DB, dialect string, baseDir string) *migration {
 	return &migration{Sql: sql, dialect: dialect, baseDir: baseDir}
 }
 
-//type DatabaseHandle interface {
-// commented until I can find a way to make it possible \
-// to inject instances from outside this package
-//	createHandle() *sql.DB
-//}
-
-// func (mig migration) createHandle() *sql.DB {
-
 func (mig migration) getRanMigrations() []int64 {
 
 	var ranMigrations []int64
@@ -93,12 +85,8 @@ func (mig migration) RunMigrations() {
 		return
 	}
 
-	dbUtil := DBUtil{}
-	dbUtil.bootstrap()
-
 	regexFofMigrationFile := regexp.MustCompile("\\d+")
 
-	//breaks if the first migrations drops and recreates the database
 	for _, value := range dir {
 
 		if !value.IsDir() {
@@ -152,8 +140,4 @@ func (mig migration) readFile(migrationFile string) []byte {
 	migrationFileContents, _ := os.ReadFile(fmt.Sprintf("%s%s/%s/up.sql", mig.baseDir, "migrations", migrationFile))
 
 	return migrationFileContents
-}
-
-func (mig migration) closeConnection() {
-
 }
