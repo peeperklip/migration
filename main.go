@@ -1,12 +1,13 @@
 package migrations
 
 import (
+	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
 	"os"
 )
 
-func Init() {
+func Init(db *sql.DB) {
 	args := os.Args
 	if len(args) == 1 {
 		contents, _ := os.ReadFile("help_file.txt")
@@ -17,7 +18,7 @@ func Init() {
 
 	command := args[1]
 
-	newMig := NewMigration(createHandle(), "postgress")
+	newMig := NewMigration(db, "postgress")
 
 	switch command {
 

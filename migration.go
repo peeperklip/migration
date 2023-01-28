@@ -3,7 +3,6 @@ package migrations
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -26,21 +25,6 @@ func NewMigration(sql *sql.DB, dialect string) *migration {
 //}
 
 // func (mig migration) createHandle() *sql.DB {
-func createHandle() *sql.DB {
-	dbName := os.Getenv("DB_NAME")
-	dbUsername := os.Getenv("DB_USER")
-	dbPassword := os.Getenv("DB_PASSWORD")
-
-	//ssl mode should be verify-full
-	connectionString := fmt.Sprintf("postgres://%s:%s@localhost/%s?sslmode=disable", dbUsername, dbPassword, dbName)
-	//_, err := sql.Open("postgres", connectionString)
-	db, err := sql.Open("postgres", connectionString)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	return db
-}
 
 func (mig migration) getRanMigrations() []int64 {
 
