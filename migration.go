@@ -76,14 +76,16 @@ func (mig migration) HasMigrationRan(migrationToCheck string) bool {
 
 }
 func (mig migration) GenerateMigration() {
+
 	currentTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	migrationDirName := fmt.Sprintf("migrations/%s", currentTimestamp)
 
+	mig.ensureDirExists("")
 	mig.ensureDirExists("migrations")
 	mig.ensureDirExists(migrationDirName)
 
 	upMigFilename := fmt.Sprintf("%s/up.sql", migrationDirName)
-	downMigFilename := fmt.Sprintf("%s/up.sql", migrationDirName)
+	downMigFilename := fmt.Sprintf("%s/down.sql", migrationDirName)
 
 	mig.createEmptyFile(upMigFilename)
 	mig.createEmptyFile(downMigFilename)
