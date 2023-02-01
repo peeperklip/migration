@@ -2,12 +2,14 @@ package migrations
 
 import (
 	"database/sql"
+	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
+	"regexp"
 	"testing"
 )
 
-func TestInit(t *testing.T) {
+func TestGenerateMigration(t *testing.T) {
 	_, err := os.Create("database.db")
 	if err != nil {
 		t.Error("Could not create a database to start testing with")
@@ -22,12 +24,38 @@ func TestInit(t *testing.T) {
 
 	mig.GenerateMigration()
 
+	validFilePath := regexp.MustCompile("^\\d*")
+
+	dirs, _ := os.ReadDir("migrations")
+
+	for _, val := range dirs {
+		if val.IsDir() && val.Name() == "migrations" {
+			continue
+		}
+
+		if !val.IsDir() {
+			t.Error("Was not expecting a non directory here")
+		}
+		if !validFilePath.Match([]byte(val.Name())) {
+			t.Error("Dir not match expected directory format")
+		}
+
+		sqlFiles, _ := os.ReadDir("migrations/" + val.Name())
+		for _, sqlFile := range sqlFiles {
+			if sqlFile.Name() != "down.sql" && sqlFile.Name() != "up.sql" {
+				t.Error(fmt.Sprintf("%s expected, got %s", "up|down.sql", sqlFile.Name()))
+			}
+		}
+	}
+
 	mig.RunMigrations()
 
-	err = os.RemoveAll("migrations")
-	err = os.RemoveAll("database.db")
+	defer func() {
+		errMig := os.RemoveAll("migrations")
+		errDb := os.RemoveAll("database.db")
 
-	if err != nil {
-		t.Error("Could not clean up after")
-	}
+		if errMig != nil || errDb != nil {
+			t.Error("Could not clean up after")
+		}
+	}()
 }
