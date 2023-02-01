@@ -16,14 +16,15 @@ func TestInit(t *testing.T) {
 
 	mig := migration{
 		baseDir: "",
-		dialect: "sqlite",
+		dialect: "sqlite3",
 		Sql:     db,
 	}
+
 	mig.GenerateMigration()
 
 	mig.RunMigrations()
 
-	err = os.RemoveAll("migration")
+	err = os.RemoveAll("migrations")
 	err = os.RemoveAll("database.db")
 
 	if err != nil {

@@ -4,8 +4,8 @@ func GetCreateTableByDialect(dialect string) string {
 	switch dialect {
 	case "postgress":
 		return "CREATE TABLE IF NOT EXISTS main.migrations (migration INTEGER NOT NULL);"
-	case "test":
-		return "NONE FOR NOW"
+	case "sqlite3":
+		return "CREATE TABLE IF NOT EXISTS migrations (migration INTEGER NOT NULL);"
 	default:
 		panic("Could not figure out how to set up the migrations table")
 	}
@@ -17,8 +17,8 @@ func InsertNewEntry(dialect string) string {
 	case "postgress":
 		return "INSERT INTO main.migrations VALUES ($1);"
 
-	case "test":
-		return "NONE FOR NOW"
+	case "sqlite3":
+		return "INSERT INTO migrations VALUES ($1);"
 	default:
 		panic("Could not figure out how to mark this migration as ran")
 	}
@@ -30,10 +30,10 @@ func QueryForRanMigrations(dialect string) string {
 	case "postgress":
 		return "SELECT migration FROM main.migrations"
 
-	case "test":
-		return "NONE FOR NOW"
+	case "sqlite3":
+		return "SELECT migration FROM migrations"
 	default:
-		panic("Could not figure out how to mark this migration as ran")
+		panic("Could not query for ran migrations")
 	}
 	return ""
 }

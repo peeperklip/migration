@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"time"
 )
@@ -49,6 +50,7 @@ func (mig migration) getRanMigrations() []int64 {
 			ranMigrations = append(ranMigrations, currentMigration)
 		}
 		if err != nil {
+			debug.PrintStack()
 			fmt.Println(err)
 		}
 
@@ -58,13 +60,6 @@ func (mig migration) getRanMigrations() []int64 {
 
 }
 
-func (mig migration) prepareMigrationsTable() {
-	_, err := mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
-
-	if err != nil {
-		fmt.Println(err)
-	}
-}
 func (mig migration) HasMigrationRan(migrationToCheck string) bool {
 	for _, item := range mig.getRanMigrations() {
 		if strconv.FormatInt(item, 10) == migrationToCheck {
@@ -95,7 +90,8 @@ func (mig migration) RunMigrations() {
 	mig.ensureDirExists("migrations")
 	dir, err := mig.readDir("migrations")
 	if err != nil {
-		return
+		debug.PrintStack()
+		panic(err)
 	}
 
 	regexFofMigrationFile := regexp.MustCompile("\\d+")
@@ -121,9 +117,11 @@ func (mig migration) RunMigrations() {
 				fmt.Println(err)
 			}
 
+			_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
 			_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), value.Name())
 
 			if err != nil {
+				debug.PrintStack()
 				fmt.Println("when marking the migration as ran: ")
 				fmt.Println(err)
 			}
@@ -136,13 +134,7 @@ func (mig migration) ensureDirExists(dir string) {
 	dir = fmt.Sprintf("%s%s", mig.baseDir, dir)
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
-		if err != nil {
-			fmt.Println(err)
-		}
-		err = os.Mkdir(dir, 0771)
-		if err != nil {
-			fmt.Println(err)
-		}
+		_ = os.Mkdir(dir, 0771)
 	}
 
 }
