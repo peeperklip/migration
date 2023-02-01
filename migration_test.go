@@ -5,6 +5,7 @@ import (
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
 	"os"
+	"os/exec"
 	"regexp"
 	"testing"
 )
@@ -58,4 +59,45 @@ func TestGenerateMigration(t *testing.T) {
 			t.Error("Could not clean up after")
 		}
 	}()
+}
+
+func TestMigration_GenerateMigration(t *testing.T) {
+	_, err := os.Create("database.db")
+	if err != nil {
+		t.Error("Could not create a database to start testing with")
+	}
+	db, err := sql.Open("sqlite3", "database.db")
+
+	mig := migration{
+		baseDir: "testing_data/",
+		dialect: "sqlite3",
+		Sql:     db,
+	}
+	_ = exec.Command("cp", "--recursive", "testing_data", ".")
+
+	mig.RunMigrations()
+
+	result, err := mig.Sql.Query(QueryForRanMigrations(mig.dialect))
+
+	if err != nil {
+		t.Error("Failure")
+		t.Error(err)
+	}
+
+	defer func(result *sql.Rows) {
+		err = result.Close()
+		if err != nil {
+			t.Error(err)
+		}
+	}(result)
+
+	defer func() {
+		errMig := os.RemoveAll("migrations")
+		errDb := os.RemoveAll("database.db")
+
+		if errMig != nil || errDb != nil {
+			t.Error("Could not clean up after")
+		}
+	}()
+
 }
