@@ -29,7 +29,6 @@ func Init(migrate migration) {
 		break
 
 	case "down":
-
 		break
 
 	case "revert_to":
@@ -37,7 +36,7 @@ func Init(migrate migration) {
 		break
 
 	case "status":
-
+		migrate.Status()
 		break
 
 	case "":

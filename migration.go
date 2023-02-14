@@ -26,9 +26,9 @@ func NewMigration(sql *sql.DB, dialect string, baseDir string) *migration {
 	return &migration{Sql: sql, dialect: dialect, baseDir: baseDir}
 }
 
-func (mig migration) getRanMigrations() []int64 {
+func (mig migration) getRanMigrations() []string {
 
-	var ranMigrations []int64
+	var ranMigrations []string
 
 	result, err := mig.Sql.Query(QueryForRanMigrations(mig.dialect))
 
@@ -44,7 +44,7 @@ func (mig migration) getRanMigrations() []int64 {
 	}(result)
 
 	for result.Next() {
-		var currentMigration int64
+		var currentMigration string
 		err = result.Scan(&currentMigration)
 		{
 			ranMigrations = append(ranMigrations, currentMigration)
@@ -62,7 +62,7 @@ func (mig migration) getRanMigrations() []int64 {
 
 func (mig migration) HasMigrationRan(migrationToCheck string) bool {
 	for _, item := range mig.getRanMigrations() {
-		if strconv.FormatInt(item, 10) == migrationToCheck {
+		if item == migrationToCheck {
 			return true
 		}
 	}
@@ -88,6 +88,30 @@ func (mig migration) GenerateMigration() {
 }
 func (mig migration) RunMigrations() {
 	mig.ensureDirExists("migrations")
+	for _, s := range mig.GetUnRanMigrations() {
+		migrationFile := mig.readFile(s)
+
+		fmt.Println("Currently executing: " + s)
+		_, err := mig.Sql.Exec(string(migrationFile))
+		if err != nil {
+			fmt.Println("Error when running migration: ")
+			fmt.Println(err)
+		}
+
+		_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
+		_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), s)
+
+		if err != nil {
+			debug.PrintStack()
+			fmt.Println("when marking the migration as ran: ")
+			fmt.Println(err)
+		}
+	}
+}
+
+func (mig migration) GetAllMigrations() []string {
+	var migrations = make([]string, 0)
+	mig.ensureDirExists("migrations")
 	dir, err := mig.readDir("migrations")
 	if err != nil {
 		debug.PrintStack()
@@ -106,27 +130,41 @@ func (mig migration) RunMigrations() {
 			continue
 		}
 
-		if !mig.HasMigrationRan(value.Name()) {
+		migrations = append(migrations, value.Name())
+	}
 
-			migrationFile := mig.readFile(value.Name())
+	return migrations
+}
 
-			fmt.Println("Currently executing: " + value.Name())
-			_, err := mig.Sql.Exec(string(migrationFile))
-			if err != nil {
-				fmt.Println("Error when running migration: ")
-				fmt.Println(err)
-			}
+func (mig migration) GetUnRanMigrations() []string {
+	allMigs := mig.GetAllMigrations()
+	ranMigs := mig.getRanMigrations()
+	unranMigs := make([]string, 0)
 
-			_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
-			_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), value.Name())
-
-			if err != nil {
-				debug.PrintStack()
-				fmt.Println("when marking the migration as ran: ")
-				fmt.Println(err)
+	for i := 0; i < len(allMigs); i++ {
+		appendItem := true
+		for x := 0; x < len(ranMigs); x++ {
+			if ranMigs[x] == allMigs[i] {
+				appendItem = false
 			}
 		}
+
+		if appendItem == true {
+			unranMigs = append(unranMigs, allMigs[i])
+		}
 	}
+
+	return unranMigs
+}
+
+func (mig migration) Status() {
+	unranMigs := mig.GetUnRanMigrations()
+	if len(unranMigs) == 0 {
+		fmt.Println("all migrations have been ran")
+		return
+	}
+	fmt.Println("these migrations were not ran")
+	fmt.Println(unranMigs)
 }
 
 // Consider moving to its own context (file and receiver)

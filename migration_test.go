@@ -51,28 +51,12 @@ func TestGenerateMigration(t *testing.T) {
 
 	mig.RunMigrations()
 
-	defer func() {
-		errMig := os.RemoveAll("migrations")
-		errDb := os.RemoveAll("database.db")
-
-		if errMig != nil || errDb != nil {
-			t.Error("Could not clean up after")
-		}
-	}()
+	defer tearDown()
 }
 
 func TestMigration_GenerateMigration(t *testing.T) {
-	_, err := os.Create("database.db")
-	if err != nil {
-		t.Error("Could not create a database to start testing with")
-	}
-	db, err := sql.Open("sqlite3", "database.db")
+	mig, _ := setUp("testing_data/")
 
-	mig := migration{
-		baseDir: "testing_data/",
-		dialect: "sqlite3",
-		Sql:     db,
-	}
 	_ = exec.Command("cp", "--recursive", "testing_data", ".")
 
 	mig.RunMigrations()
@@ -91,13 +75,58 @@ func TestMigration_GenerateMigration(t *testing.T) {
 		}
 	}(result)
 
-	defer func() {
-		errMig := os.RemoveAll("migrations")
-		errDb := os.RemoveAll("database.db")
+	defer tearDown()
 
-		if errMig != nil || errDb != nil {
-			t.Error("Could not clean up after")
-		}
-	}()
+}
 
+func TestMigration_GetAllMigrations(t *testing.T) {
+	mig, _ := setUp("")
+
+	mig.GenerateMigration()
+	mig.GenerateMigration()
+
+	_ = exec.Command("cp", "--recursive", "testing_data", ".")
+
+	migs := mig.GetAllMigrations()
+	if len(migs) == 0 {
+		t.Error("Expected at least one migration to be present on filesystem")
+	}
+
+	defer tearDown()
+}
+
+func TestMigration_GetUnRanMigrations(t *testing.T) {
+
+	mig, _ := setUp("")
+	mig.GenerateMigration()
+	res := mig.GetUnRanMigrations()
+	if len(res) != 1 {
+		t.Error("failure!")
+	}
+
+	mig.RunMigrations()
+	res = mig.GetUnRanMigrations()
+	if len(res) != 0 {
+		t.Error("failure!")
+	}
+
+	defer tearDown()
+}
+
+func tearDown() {
+	_ = os.RemoveAll("migrations")
+	_ = os.RemoveAll("database.db")
+}
+
+func setUp(baseDir string) (migration, error) {
+	_, err := os.Create("database.db")
+	db, err := sql.Open("sqlite3", "database.db")
+
+	mig := migration{
+		baseDir: baseDir,
+		dialect: "sqlite3",
+		Sql:     db,
+	}
+
+	return mig, err
 }
