@@ -17,7 +17,16 @@ go get https://github.com/peeperklip/migration@{COMMIT_HASH}
 2. Create a directory `cli`
    * as per https://github.com/golang-standards/project-layout/tree/master/cmd
 3. create a file + function that you can exectute command line
-4. 
+```
+//File: $PROJECT_ROOT/cli/migration.go
+func main() {
+	mig := migrations.NewMigration(
+		utils.CreateConnection(),
+		"postgress",
+		"..")
+	migrations.Init(*mig)
+}
+```
 
 
 ### Architecture:
