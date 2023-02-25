@@ -26,6 +26,26 @@ func NewMigration(sql *sql.DB, dialect string, baseDir string) *migration {
 	return &migration{Sql: sql, dialect: dialect, baseDir: baseDir}
 }
 
+func (mig migration) Down() {
+	var biggest int
+	allMigrations := mig.GetAllMigrations()
+
+	for i := 0; i < len(allMigrations); i++ {
+		temp, _ := strconv.Atoi(allMigrations[i])
+		if temp > biggest || biggest == 0 {
+			biggest = temp
+		}
+
+		continue
+	}
+
+	mig.DownTo(string(rune(biggest)))
+}
+
+func (mig migration) DownTo(downto string) {
+
+}
+
 func (mig migration) getRanMigrations() []string {
 
 	var ranMigrations []string
@@ -89,23 +109,27 @@ func (mig migration) GenerateMigration() {
 func (mig migration) RunMigrations() {
 	mig.ensureDirExists("migrations")
 	for _, s := range mig.GetUnRanMigrations() {
-		migrationFile := mig.readFile(s)
+		mig.runSingleMigration(s, "up")
+	}
+}
 
-		fmt.Println("Currently executing: " + s)
-		_, err := mig.Sql.Exec(string(migrationFile))
-		if err != nil {
-			fmt.Println("Error when running migration: ")
-			fmt.Println(err)
-		}
+func (mig migration) runSingleMigration(s string, direction string) {
+	migrationFile := mig.readFile(s, direction)
 
-		_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
-		_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), s)
+	fmt.Println("Currently executing: " + s)
+	_, err := mig.Sql.Exec(string(migrationFile))
+	if err != nil {
+		fmt.Println("Error when running migration: ")
+		fmt.Println(err)
+	}
 
-		if err != nil {
-			debug.PrintStack()
-			fmt.Println("when marking the migration as ran: ")
-			fmt.Println(err)
-		}
+	_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
+	_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), s)
+
+	if err != nil {
+		debug.PrintStack()
+		fmt.Println("when marking the migration as ran: ")
+		fmt.Println(err)
 	}
 }
 
@@ -191,8 +215,8 @@ func (mig migration) readDir(dir string) ([]os.DirEntry, error) {
 	return os.ReadDir(dir)
 }
 
-func (mig migration) readFile(migrationFile string) []byte {
-	migrationFileContents, err := os.ReadFile(fmt.Sprintf("%s%s/%s/up.sql", mig.baseDir, "migrations", migrationFile))
+func (mig migration) readFile(migrationFile string, direction string) []byte {
+	migrationFileContents, err := os.ReadFile(fmt.Sprintf("%s%s/%s/%s.sql", mig.baseDir, "migrations", migrationFile, direction))
 	if err != nil {
 		fmt.Println(err)
 	}
