@@ -43,7 +43,7 @@ func (mig migration) Down() {
 }
 
 func (mig migration) DownTo(downto string) {
-
+	mig.runSingleMigration(downto, "up")
 }
 
 func (mig migration) getRanMigrations() []string {

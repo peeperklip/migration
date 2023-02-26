@@ -29,18 +29,22 @@ func Init(migrate migration) {
 		break
 
 	case "down":
+		migrate.Down()
 		break
 
 	case "revert_to":
+		if len(args) == 2 {
+			outputHelpText()
+			panic("No migration given to revert to")
+		}
 
+		requestedMigration := args[2]
+
+		migrate.DownTo(requestedMigration)
 		break
 
 	case "status":
 		migrate.Status()
-		break
-
-	case "":
-		outputHelpText()
 		break
 	default:
 		outputHelpText()
