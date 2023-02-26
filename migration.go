@@ -121,6 +121,7 @@ func (mig migration) runSingleMigration(s string, direction string) {
 	if err != nil {
 		fmt.Println("Error when running migration: ")
 		fmt.Println(err)
+		return
 	}
 
 	_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
