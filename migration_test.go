@@ -17,7 +17,7 @@ func TestGenerateMigration(t *testing.T) {
 	}
 	db, err := sql.Open("sqlite3", "database.db")
 
-	mig := migration{
+	mig := migConfig{
 		baseDir: "",
 		dialect: "sqlite3",
 		Sql:     db,
@@ -89,7 +89,7 @@ func TestMigration_GetAllMigrations(t *testing.T) {
 
 	migs := mig.GetAllMigrations()
 	if len(migs) == 0 {
-		t.Error("Expected at least one migration to be present on filesystem")
+		t.Error("Expected at least one migConfig to be present on filesystem")
 	}
 
 	defer tearDown()
@@ -118,11 +118,11 @@ func tearDown() {
 	_ = os.RemoveAll("database.db")
 }
 
-func setUp(baseDir string) (migration, error) {
+func setUp(baseDir string) (migConfig, error) {
 	_, err := os.Create("database.db")
 	db, err := sql.Open("sqlite3", "database.db")
 
-	mig := migration{
+	mig := migConfig{
 		baseDir: baseDir,
 		dialect: "sqlite3",
 		Sql:     db,

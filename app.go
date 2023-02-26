@@ -7,7 +7,7 @@ import (
 	"text/tabwriter"
 )
 
-func Init(migrate migration) {
+func Init(migrate migConfig) {
 	args := os.Args
 
 	if len(args) == 1 {
@@ -35,7 +35,7 @@ func Init(migrate migration) {
 	case "revert":
 		if len(args) == 2 {
 			outputHelpText()
-			panic("No migration given to revert")
+			panic("No migConfig given to revert")
 		}
 
 		requestedMigration := args[2]
@@ -59,11 +59,11 @@ func outputHelpText() {
 	_, _ = fmt.Println("Usage: go cli/migrations.go [COMMAND]")
 	_, _ = fmt.Println()
 	_, _ = fmt.Println("Available commands:")
-	_, _ = fmt.Fprintln(w, "\tgenerate \t This generates a new migration")
+	_, _ = fmt.Fprintln(w, "\tgenerate \t This generates a new migConfig")
 	_, _ = fmt.Fprintln(w, "\tmigrate \t Run the migrations")
-	_, _ = fmt.Fprintln(w, "\tdown \t the last ran migration according to down.sql")
-	_, _ = fmt.Fprintln(w, "\trevert \t Revert to a specific migration")
-	_, _ = fmt.Fprintln(w, "\tstatus \t Warn about any migration that hasn't run")
+	_, _ = fmt.Fprintln(w, "\tdown \t the last ran migConfig according to down.sql")
+	_, _ = fmt.Fprintln(w, "\trevert \t Revert to a specific migConfig")
+	_, _ = fmt.Fprintln(w, "\tstatus \t Warn about any migConfig that hasn't run")
 
 	_, _ = fmt.Fprintln(w)
 	_ = w.Flush()

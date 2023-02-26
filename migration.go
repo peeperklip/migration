@@ -11,22 +11,22 @@ import (
 )
 
 // Keeping an eye on this struct. It and its logic seem to be growing and being more all over the place...
-type migration struct {
+type migConfig struct {
 	Sql     *sql.DB
 	dialect string
 	baseDir string
 }
 
-func NewMigration(sql *sql.DB, dialect string, baseDir string) *migration {
+func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
 	//Append a '/' if the string is not empty and doesn't already end with a '/'.
 	//This is to avoid files/dirs are created/read in and from unexpected places
 	if baseDir != "" && baseDir[len(baseDir)-1:] != "/" {
 		baseDir += "/"
 	}
-	return &migration{Sql: sql, dialect: dialect, baseDir: baseDir}
+	return &migConfig{Sql: sql, dialect: dialect, baseDir: baseDir}
 }
 
-func (mig migration) Down() {
+func (mig migConfig) Down() {
 	var biggest int
 	allMigrations := mig.GetAllMigrations()
 
@@ -42,11 +42,11 @@ func (mig migration) Down() {
 	mig.DownTo(string(rune(biggest)))
 }
 
-func (mig migration) DownTo(downto string) {
+func (mig migConfig) DownTo(downto string) {
 	mig.runSingleMigration(downto, "down")
 }
 
-func (mig migration) getRanMigrations() []string {
+func (mig migConfig) getRanMigrations() []string {
 
 	var ranMigrations []string
 
@@ -80,7 +80,7 @@ func (mig migration) getRanMigrations() []string {
 
 }
 
-func (mig migration) HasMigrationRan(migrationToCheck string) bool {
+func (mig migConfig) HasMigrationRan(migrationToCheck string) bool {
 	for _, item := range mig.getRanMigrations() {
 		if item == migrationToCheck {
 			return true
@@ -90,7 +90,7 @@ func (mig migration) HasMigrationRan(migrationToCheck string) bool {
 	return false
 
 }
-func (mig migration) GenerateMigration() {
+func (mig migConfig) GenerateMigration() {
 
 	currentTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	migrationDirName := fmt.Sprintf("migrations/%s", currentTimestamp)
@@ -106,20 +106,20 @@ func (mig migration) GenerateMigration() {
 	mig.createEmptyFile(downMigFilename)
 
 }
-func (mig migration) RunMigrations() {
+func (mig migConfig) RunMigrations() {
 	mig.ensureDirExists("migrations")
 	for _, s := range mig.GetUnRanMigrations() {
 		mig.runSingleMigration(s, "up")
 	}
 }
 
-func (mig migration) runSingleMigration(s string, direction string) {
+func (mig migConfig) runSingleMigration(s string, direction string) {
 	migrationFile := mig.readFile(s, direction)
 
 	fmt.Println("Currently executing: " + s)
 	_, err := mig.Sql.Exec(string(migrationFile))
 	if err != nil {
-		fmt.Println("Error when running migration: ")
+		fmt.Println("Error when running migConfig: ")
 		fmt.Println(err)
 		return
 	}
@@ -129,12 +129,12 @@ func (mig migration) runSingleMigration(s string, direction string) {
 
 	if err != nil {
 		debug.PrintStack()
-		fmt.Println("when marking the migration as ran: ")
+		fmt.Println("when marking the migConfig as ran: ")
 		fmt.Println(err)
 	}
 }
 
-func (mig migration) GetAllMigrations() []string {
+func (mig migConfig) GetAllMigrations() []string {
 	var migrations = make([]string, 0)
 	mig.ensureDirExists("migrations")
 	dir, err := mig.readDir("migrations")
@@ -161,7 +161,7 @@ func (mig migration) GetAllMigrations() []string {
 	return migrations
 }
 
-func (mig migration) GetUnRanMigrations() []string {
+func (mig migConfig) GetUnRanMigrations() []string {
 	allMigs := mig.GetAllMigrations()
 	ranMigs := mig.getRanMigrations()
 	unranMigs := make([]string, 0)
@@ -182,7 +182,7 @@ func (mig migration) GetUnRanMigrations() []string {
 	return unranMigs
 }
 
-func (mig migration) Status() {
+func (mig migConfig) Status() {
 	unranMigs := mig.GetUnRanMigrations()
 	if len(unranMigs) == 0 {
 		fmt.Println("all migrations have been ran")
@@ -193,7 +193,7 @@ func (mig migration) Status() {
 }
 
 // Consider moving to its own context (file and receiver)
-func (mig migration) ensureDirExists(dir string) {
+func (mig migConfig) ensureDirExists(dir string) {
 	dir = fmt.Sprintf("%s%s", mig.baseDir, dir)
 
 	if _, err := os.Stat(dir); os.IsNotExist(err) {
@@ -202,7 +202,7 @@ func (mig migration) ensureDirExists(dir string) {
 
 }
 
-func (mig migration) createEmptyFile(filePath string) {
+func (mig migConfig) createEmptyFile(filePath string) {
 	filePath = fmt.Sprintf("%s%s", mig.baseDir, filePath)
 	_, err := os.Create(filePath)
 
@@ -211,12 +211,12 @@ func (mig migration) createEmptyFile(filePath string) {
 	}
 }
 
-func (mig migration) readDir(dir string) ([]os.DirEntry, error) {
+func (mig migConfig) readDir(dir string) ([]os.DirEntry, error) {
 	dir = fmt.Sprintf("%s%s", mig.baseDir, dir)
 	return os.ReadDir(dir)
 }
 
-func (mig migration) readFile(migrationFile string, direction string) []byte {
+func (mig migConfig) readFile(migrationFile string, direction string) []byte {
 	migrationFileContents, err := os.ReadFile(fmt.Sprintf("%s%s/%s/%s.sql", mig.baseDir, "migrations", migrationFile, direction))
 	if err != nil {
 		fmt.Println(err)
