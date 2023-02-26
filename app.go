@@ -32,10 +32,10 @@ func Init(migrate migration) {
 		migrate.Down()
 		break
 
-	case "revert_to":
+	case "revert":
 		if len(args) == 2 {
 			outputHelpText()
-			panic("No migration given to revert to")
+			panic("No migration given to revert")
 		}
 
 		requestedMigration := args[2]
@@ -63,7 +63,7 @@ func outputHelpText() {
 	_, _ = fmt.Fprintln(w, "\tgenerate \t This generates a new migration")
 	_, _ = fmt.Fprintln(w, "\tmigrate \t Run the migrations")
 	_, _ = fmt.Fprintln(w, "\tdown \t Undo a specific migration according to down.sql")
-	_, _ = fmt.Fprintln(w, "\trevert_to \t Undo all migrations according to down.sql until, but >not< including the specified migration")
+	_, _ = fmt.Fprintln(w, "\trevert \t Undo all migrations according to down.sql until, but >not< including the specified migration")
 	_, _ = fmt.Fprintln(w, "\tstatus \t Warn about any migration that hasn't run")
 
 	_, _ = fmt.Fprintln(w)
