@@ -1,21 +1,26 @@
 package migrations
 
+type dbUtil struct {
+	dbms            string
+	createStatement string
+}
+
+var mapangpang = make(map[string]string)
+
+func addCreateStatement(dbms string, createStatement string) {
+	mapangpang[dbms] = createStatement
+}
+
 func GetCreateTableByDialect(dialect string) string {
-	switch dialect {
-	case "postgress":
-		return "CREATE TABLE IF NOT EXISTS main.migrations (migConfig INTEGER NOT NULL);"
-	case "sqlite3":
-		return "CREATE TABLE IF NOT EXISTS migrations (migConfig INTEGER NOT NULL);"
-	default:
-		panic("Could not figure out how to set up the migrations table")
-	}
-	return ""
+	addCreateStatement("postgress", "CREATE TYPE migstatus AS ENUM ('RAN', 'REVERTED', 'UNRAN');CREATE TABLE IF NOT EXISTS main.migrations (migration INTEGER NOT NULL, migstatus migstatus);")
+
+	return mapangpang[dialect]
 }
 
 func InsertNewEntry(dialect string) string {
 	switch dialect {
 	case "postgress":
-		return "INSERT INTO main.migrations VALUES ($1);"
+		return "INSERT INTO main.migrations VALUES ($1, 'RAN');"
 
 	case "sqlite3":
 		return "INSERT INTO migrations VALUES ($1);"

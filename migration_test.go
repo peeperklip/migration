@@ -87,7 +87,7 @@ func TestMigration_GetAllMigrations(t *testing.T) {
 
 	_ = exec.Command("cp", "--recursive", "testing_data", ".")
 
-	migs := mig.GetAllMigrations()
+	migs := mig.getAllMigrations()
 	if len(migs) == 0 {
 		t.Error("Expected at least one migConfig to be present on filesystem")
 	}

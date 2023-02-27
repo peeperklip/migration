@@ -3,6 +3,7 @@ package migrations
 import (
 	"database/sql"
 	"fmt"
+	"github.com/peeperklip/migration/internal"
 	"os"
 	"regexp"
 	"runtime/debug"
@@ -10,11 +11,62 @@ import (
 	"time"
 )
 
-// Keeping an eye on this struct. It and its logic seem to be growing and being more all over the place...
 type migConfig struct {
 	Sql     *sql.DB
 	dialect string
 	baseDir string
+}
+
+var stateMap = [3]string{"RAN", "UNRAN", "REVERTED"}
+
+type migration struct {
+	id    string
+	state string
+}
+
+func (migration *migration) setState(stateString string) {
+	for _, val := range stateMap {
+		if val == stateString {
+			migration.state = stateString
+		}
+	}
+
+	//Trigger error?
+}
+
+// table > migration
+// 1676928405
+// 1677431029
+// 1677431498
+// 1677431029
+
+// TODO: dont call as config. but as migrator(?)
+func loadMigrations(config migConfig) []migration {
+
+	miglist := make([]migration, 0)
+	ranMigs := config.getRanMigrations()
+	allMigs := config.getAllMigrations()
+
+mainLoop:
+	for _, mig := range allMigs {
+		for _, ranMig := range ranMigs {
+			if ranMig.id == mig {
+				continue mainLoop
+			}
+		}
+
+		//The migrations that have been ran before already had their statusses and are bing tracked
+		//The untracked ones are by definition unran
+
+		miglist = append(miglist, migration{
+			id:    mig,
+			state: "UNRAN",
+		})
+
+	}
+
+	return miglist
+
 }
 
 func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
@@ -28,7 +80,7 @@ func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
 
 func (mig migConfig) Down() {
 	var biggest int
-	allMigrations := mig.GetAllMigrations()
+	allMigrations := mig.getAllMigrations()
 
 	for i := 0; i < len(allMigrations); i++ {
 		temp, _ := strconv.Atoi(allMigrations[i])
@@ -46,38 +98,32 @@ func (mig migConfig) DownTo(downto string) {
 	mig.runSingleMigration(downto, "down")
 }
 
-func (mig migConfig) getRanMigrations() []string {
+func (mig migConfig) getRanMigrations() []migration {
 
-	var ranMigrations []string
+	var ranMigrations []migration
 
 	result, err := mig.Sql.Query(QueryForRanMigrations(mig.dialect))
 
 	if err != nil {
+		internal.AddError(err)
 		return ranMigrations
 	}
 
 	defer func(result *sql.Rows) {
 		err = result.Close()
-		if err != nil {
-			fmt.Println(err)
-		}
+		internal.AddError(err)
 	}(result)
 
 	for result.Next() {
-		var currentMigration string
-		err = result.Scan(&currentMigration)
+		var currentMigration migration
+		err = result.Scan(&currentMigration.id, &currentMigration.state)
 		{
 			ranMigrations = append(ranMigrations, currentMigration)
 		}
-		if err != nil {
-			debug.PrintStack()
-			fmt.Println(err)
-		}
-
+		internal.AddError(err)
 	}
 
 	return ranMigrations
-
 }
 
 func (mig migConfig) HasMigrationRan(migrationToCheck string) bool {
@@ -134,7 +180,8 @@ func (mig migConfig) runSingleMigration(s string, direction string) {
 	}
 }
 
-func (mig migConfig) GetAllMigrations() []string {
+// Gets a list of all migration files in dir
+func (mig migConfig) getAllMigrations() []string {
 	var migrations = make([]string, 0)
 	mig.ensureDirExists("migrations")
 	dir, err := mig.readDir("migrations")
@@ -162,7 +209,7 @@ func (mig migConfig) GetAllMigrations() []string {
 }
 
 func (mig migConfig) GetUnRanMigrations() []string {
-	allMigs := mig.GetAllMigrations()
+	allMigs := mig.getAllMigrations()
 	ranMigs := mig.getRanMigrations()
 	unranMigs := make([]string, 0)
 
