@@ -24,7 +24,23 @@ type migration struct {
 	state string
 }
 
+func createNewMigration(migrationId string, stateString string) migration {
+	var migration migration
+
+	migration.id = migrationId
+	migration.setState(stateString)
+	return migration
+}
+
 func (migration *migration) setState(stateString string) {
+	if migration.state == "UNRAN" && stateString == "REVERTED" {
+		panic("This could never happen")
+	}
+
+	if migration.state == "REVERTED" && stateString == "UNRAN" {
+		panic("This could never happen")
+	}
+
 	for _, val := range stateMap {
 		if val == stateString {
 			migration.state = stateString
@@ -41,11 +57,11 @@ func (migration *migration) setState(stateString string) {
 // 1677431029
 
 // TODO: dont call as config. but as migrator(?)
-func loadMigrations(config migConfig) []migration {
-
+func loadMigrations(migrator migConfig) []migration {
+	migrator.ensureDirExists("migrations")
 	miglist := make([]migration, 0)
-	ranMigs := config.getRanMigrations()
-	allMigs := config.getAllMigrations()
+	ranMigs := migrator.getRanMigrations()
+	allMigs := migrator.getAllMigrations()
 
 mainLoop:
 	for _, mig := range allMigs {
@@ -57,16 +73,11 @@ mainLoop:
 
 		//The migrations that have been ran before already had their statusses and are bing tracked
 		//The untracked ones are by definition unran
-
-		miglist = append(miglist, migration{
-			id:    mig,
-			state: "UNRAN",
-		})
+		miglist = append(miglist, createNewMigration(mig, "UNRAN"))
 
 	}
 
 	return miglist
-
 }
 
 func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
@@ -95,7 +106,18 @@ func (mig migConfig) Down() {
 }
 
 func (mig migConfig) DownTo(downto string) {
-	mig.runSingleMigration(downto, "down")
+	migs := loadMigrations(mig)
+	for _, m := range migs {
+		if m.id != downto {
+			continue
+		}
+
+		if m.state == "RAN" || m.state == "REVERTED" {
+			break
+		}
+
+		mig.runSingleMigration(&m, "down")
+	}
 }
 
 func (mig migConfig) getRanMigrations() []migration {
@@ -153,31 +175,33 @@ func (mig migConfig) GenerateMigration() {
 
 }
 func (mig migConfig) RunMigrations() {
-	mig.ensureDirExists("migrations")
-	for _, s := range mig.GetUnRanMigrations() {
-		mig.runSingleMigration(s, "up")
+	migrations := loadMigrations(mig)
+
+	for _, m := range migrations {
+		if m.state == "REVERTED" {
+			continue
+		}
+
+		mig.runSingleMigration(&m, "up")
 	}
+
 }
 
-func (mig migConfig) runSingleMigration(s string, direction string) {
-	migrationFile := mig.readFile(s, direction)
+func (mig migConfig) runSingleMigration(s *migration, direction string) {
+	migrationFile := mig.readFile(s.id, direction)
 
-	fmt.Println("Currently executing: " + s)
+	fmt.Println("Currently executing: " + s.id)
 	_, err := mig.Sql.Exec(string(migrationFile))
 	if err != nil {
-		fmt.Println("Error when running migConfig: ")
-		fmt.Println(err)
+		internal.AddError(err)
 		return
 	}
 
 	_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
-	_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), s)
+	internal.AddError(err)
 
-	if err != nil {
-		debug.PrintStack()
-		fmt.Println("when marking the migConfig as ran: ")
-		fmt.Println(err)
-	}
+	_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), s.state)
+	internal.AddError(err)
 }
 
 // Gets a list of all migration files in dir
