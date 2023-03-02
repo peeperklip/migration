@@ -7,49 +7,72 @@ import (
 	"text/tabwriter"
 )
 
-func Init(migrate migConfig) {
-	args := os.Args
+type commandInterface interface {
+	run(migconfig migConfig, arguments []string)
+}
 
-	if len(args) == 1 {
+type generate struct{}
+type migrate struct{}
+type status struct{}
+type revert struct{}
+type down struct{}
+type help struct{}
+
+var commands = map[string]commandInterface{
+	"generate": generate{},
+	"migrate":  migrate{},
+	"status":   status{},
+	"revert":   revert{},
+	"down":     down{},
+	"":         help{},
+	"help":     help{},
+}
+
+func (h help) run(migconfig migConfig, arguments []string) {
+	outputHelpText()
+}
+
+func (c generate) run(migconfig migConfig, arguments []string) {
+	migconfig.GenerateMigration()
+}
+
+func (m migrate) run(migconfig migConfig, arguments []string) {
+	migconfig.RunMigrations()
+}
+
+func (s status) run(migconfig migConfig, arguments []string) {
+	migconfig.Status()
+}
+
+func (r revert) run(migconfig migConfig, arguments []string) {
+	if len(arguments) == 2 {
 		outputHelpText()
-		return
+		panic("No migConfig given to revert")
 	}
 
-	command := args[1]
+	requestedMigration := arguments[2]
 
-	switch command {
+	migconfig.DownTo(requestedMigration)
+}
 
-	case "generate":
+func (d down) run(migconfig migConfig, arguments []string) {
+	migconfig.Down()
+}
 
-		migrate.GenerateMigration()
-		break
+func Init(migrate migConfig, command string) {
+	args := os.Args
 
-	case "migrate":
-		migrate.RunMigrations()
-		break
-
-	case "down":
-		migrate.Down()
-		break
-
-	case "revert":
-		if len(args) == 2 {
-			outputHelpText()
-			panic("No migConfig given to revert")
+	for index, _ := range creationStatements {
+		if index == command {
+			break
 		}
 
-		requestedMigration := args[2]
-
-		migrate.DownTo(requestedMigration)
-		break
-
-	case "status":
-		migrate.Status()
-		break
-	default:
 		outputHelpText()
 		panic("This command is not supported")
 	}
+
+	setUp(migrate.dialect)
+	commands[command].run(migrate, args)
 }
 
 func outputHelpText() {
