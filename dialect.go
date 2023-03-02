@@ -1,44 +1,61 @@
 package migrations
 
+import "fmt"
+
 type dbUtil struct {
-	dbms            string
-	createStatement string
+	dbms                  string
+	createStatement       string
+	insertStatement       string
+	ranMigrationStatement string
 }
 
-var mapangpang = make(map[string]string)
+var creationStatements = make(map[string]string)
+var insertStatements = make(map[string]string)
+var queryForRanMigrations = make(map[string]string)
 
 func addCreateStatement(dbms string, createStatement string) {
-	mapangpang[dbms] = createStatement
+	creationStatements[dbms] = createStatement
 }
 
-func GetCreateTableByDialect(dialect string) string {
+func addInsertStatement(dbms string, statement string) {
+	insertStatements[dbms] = statement
+}
+
+func addQueryStatements(dbms string, statement string) {
+	queryForRanMigrations[dbms] = statement
+}
+
+func setUp(dbms string) *dbUtil {
+	for index, _ := range creationStatements {
+		if index == dbms {
+			break
+		}
+
+		panic(fmt.Sprintf("DBMS %s was not configured", dbms))
+	}
+
+	return &dbUtil{
+		dbms:                  dbms,
+		createStatement:       getCreateTableByDialect(dbms),
+		insertStatement:       getInsertNewEntryByDialect(dbms),
+		ranMigrationStatement: getQueryForGettingMigrations(dbms),
+	}
+}
+
+func getCreateTableByDialect(dialect string) string {
 	addCreateStatement("postgress", "CREATE TYPE migstatus AS ENUM ('RAN', 'REVERTED', 'UNRAN');CREATE TABLE IF NOT EXISTS main.migrations (migration INTEGER NOT NULL, migstatus migstatus);")
 
-	return mapangpang[dialect]
+	return creationStatements[dialect]
 }
 
-func InsertNewEntry(dialect string) string {
-	switch dialect {
-	case "postgress":
-		return "INSERT INTO main.migrations VALUES ($1, 'RAN');"
+func getInsertNewEntryByDialect(dbms string) string {
+	addInsertStatement("postgress", "INSERT INTO main.migrations VALUES ($1, 'RAN');")
 
-	case "sqlite3":
-		return "INSERT INTO migrations VALUES ($1);"
-	default:
-		panic("Could not figure out how to mark this migConfig as ran")
-	}
-	return ""
+	return insertStatements[dbms]
 }
 
-func QueryForRanMigrations(dialect string) string {
-	switch dialect {
-	case "postgress":
-		return "SELECT migConfig FROM main.migrations"
+func getQueryForGettingMigrations(dbms string) string {
+	addQueryStatements(dbms, "SELECT migConfig, migstatus FROM main.migrations")
 
-	case "sqlite3":
-		return "SELECT migConfig FROM migrations"
-	default:
-		panic("Could not query for ran migrations")
-	}
-	return ""
+	return queryForRanMigrations[dbms]
 }
