@@ -29,6 +29,7 @@ func (mig migConfig) initialize() {
 	mig.ensureDirExists("")
 	mig.ensureDirExists("migrations")
 	mig.ensureTableExists()
+	setUp(mig.dialect)
 }
 
 func createNewMigration(migrationId string, stateString string) migration {
@@ -85,14 +86,17 @@ mainLoop:
 	return miglist
 }
 
-//func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
-//	//Append a '/' if the string is not empty and doesn't already end with a '/'.
-//	//This is to avoid files/dirs are created/read in and from unexpected places
-//	if baseDir != "" && baseDir[len(baseDir)-1:] != "/" {
-//		baseDir += "/"
-//	}
-//	return &migConfig{Sql: sql, dialect: dialect, baseDir: baseDir}
-//}
+func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
+	//Append a '/' if the string is not empty and doesn't already end with a '/'.
+	//This is to avoid files/dirs are created/read in and from unexpected places
+	if baseDir != "" && baseDir[len(baseDir)-1:] != "/" {
+		baseDir += "/"
+	}
+	mc := &migConfig{Sql: sql, dialect: dialect, baseDir: baseDir}
+	mc.initialize()
+
+	return mc
+}
 
 func (mig migConfig) Down() {
 	var biggest int

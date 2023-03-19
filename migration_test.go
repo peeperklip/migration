@@ -128,13 +128,8 @@ func setUpTesting(baseDir string) (migConfig, error) {
 	_, err := os.Create("database.db")
 	db, err := sql.Open("sqlite3", "database.db")
 
-	mig := migConfig{
-		baseDir: baseDir,
-		dialect: "sqlite3",
-		Sql:     db,
-	}
+	mg := NewMigration(db, "sqlite3", baseDir)
 
-	setUp("sqlite3")
-	mig.initialize()
-	return mig, err
+	mg.initialize()
+	return *mg, err
 }

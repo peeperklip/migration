@@ -71,7 +71,6 @@ func Init(migrate migConfig, command string) {
 		panic("This command is not supported")
 	}
 
-	setUp(migrate.dialect)
 	commands[command].run(migrate, args)
 }
 
