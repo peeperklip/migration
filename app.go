@@ -33,15 +33,15 @@ func (h help) run(migconfig migConfig, arguments []string) {
 }
 
 func (c generate) run(migconfig migConfig, arguments []string) {
-	migconfig.GenerateMigration()
+	migconfig.generateMigration()
 }
 
 func (m migrate) run(migconfig migConfig, arguments []string) {
-	migconfig.RunMigrations()
+	migconfig.runMigrations()
 }
 
 func (s status) run(migconfig migConfig, arguments []string) {
-	migconfig.Status()
+	migconfig.status()
 }
 
 func (r revert) run(migconfig migConfig, arguments []string) {
@@ -52,11 +52,11 @@ func (r revert) run(migconfig migConfig, arguments []string) {
 
 	requestedMigration := arguments[2]
 
-	migconfig.DownTo(requestedMigration)
+	migconfig.downTo(requestedMigration)
 }
 
 func (d down) run(migconfig migConfig, arguments []string) {
-	migconfig.Down()
+	migconfig.down()
 }
 
 func Init(migrate migConfig, command string) {

@@ -98,7 +98,7 @@ func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
 	return mc
 }
 
-func (mig migConfig) Down() {
+func (mig migConfig) down() {
 	var biggest int
 	allMigrations := mig.getAllMigrations()
 
@@ -111,10 +111,10 @@ func (mig migConfig) Down() {
 		continue
 	}
 
-	mig.DownTo(string(rune(biggest)))
+	mig.downTo(string(rune(biggest)))
 }
 
-func (mig migConfig) DownTo(downto string) {
+func (mig migConfig) downTo(downto string) {
 	migs := loadMigrations(mig)
 	for _, m := range migs {
 		if m.id != downto {
@@ -157,7 +157,7 @@ func (mig migConfig) getRanMigrations() []migration {
 	return ranMigrations
 }
 
-func (mig migConfig) HasMigrationRan(migrationToCheck string) bool {
+func (mig migConfig) hasMigrationRan(migrationToCheck string) bool {
 	for _, item := range mig.getRanMigrations() {
 		if item.id == migrationToCheck {
 			return true
@@ -167,7 +167,7 @@ func (mig migConfig) HasMigrationRan(migrationToCheck string) bool {
 	return false
 
 }
-func (mig migConfig) GenerateMigration() {
+func (mig migConfig) generateMigration() {
 
 	currentTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	migrationDirName := fmt.Sprintf("migrations/%s", currentTimestamp)
@@ -181,7 +181,7 @@ func (mig migConfig) GenerateMigration() {
 	mig.createEmptyFile(downMigFilename)
 
 }
-func (mig migConfig) RunMigrations() {
+func (mig migConfig) runMigrations() {
 	migrations := loadMigrations(mig)
 
 	for _, m := range migrations {
@@ -239,7 +239,7 @@ func (mig migConfig) getAllMigrations() []string {
 	return migrations
 }
 
-func (mig migConfig) GetUnRanMigrations() []string {
+func (mig migConfig) getUnRanMigrations() []string {
 	allMigs := mig.getAllMigrations()
 	ranMigs := mig.getRanMigrations()
 	unranMigs := make([]string, 0)
@@ -260,8 +260,8 @@ func (mig migConfig) GetUnRanMigrations() []string {
 	return unranMigs
 }
 
-func (mig migConfig) Status() {
-	unranMigs := mig.GetUnRanMigrations()
+func (mig migConfig) status() {
+	unranMigs := mig.getUnRanMigrations()
 	if len(unranMigs) == 0 {
 		log.Println("all migrations have been ran")
 		return

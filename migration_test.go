@@ -25,7 +25,7 @@ func TestGenerateMigration(t *testing.T) {
 	}
 	mig.initialize()
 
-	mig.GenerateMigration()
+	mig.generateMigration()
 
 	validFilePath := regexp.MustCompile("^\\d*")
 
@@ -51,7 +51,7 @@ func TestGenerateMigration(t *testing.T) {
 		}
 	}
 
-	mig.RunMigrations()
+	mig.runMigrations()
 
 	defer tearDown()
 }
@@ -61,7 +61,7 @@ func TestMigration_GenerateMigration(t *testing.T) {
 
 	_ = exec.Command("cp", "--recursive", "testing_data", ".")
 
-	mig.RunMigrations()
+	mig.runMigrations()
 
 	result, err := mig.Sql.Query(getQueryForGettingMigrations(mig.dialect))
 
@@ -85,8 +85,8 @@ func TestMigration_GenerateMigration(t *testing.T) {
 func TestMigration_GetAllMigrations(t *testing.T) {
 	mig, _ := setUpTesting("")
 
-	mig.GenerateMigration()
-	mig.GenerateMigration()
+	mig.generateMigration()
+	mig.generateMigration()
 
 	_ = exec.Command("cp", "--recursive", "testing_data", ".")
 
@@ -101,14 +101,14 @@ func TestMigration_GetAllMigrations(t *testing.T) {
 func TestMigration_GetUnRanMigrations(t *testing.T) {
 
 	mig, _ := setUpTesting("")
-	mig.GenerateMigration()
-	res := mig.GetUnRanMigrations()
+	mig.generateMigration()
+	res := mig.getUnRanMigrations()
 	if len(res) != 1 {
 		t.Error("failure! expected 1")
 	}
 
-	mig.RunMigrations()
-	res = mig.GetUnRanMigrations()
+	mig.runMigrations()
+	res = mig.getUnRanMigrations()
 
 	if len(res) != 0 {
 		t.Error("failure! expected 0")
