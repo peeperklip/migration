@@ -110,7 +110,6 @@ func TestMigration_GetUnRanMigrations(t *testing.T) {
 	mig.RunMigrations()
 	res = mig.GetUnRanMigrations()
 
-	t.Error(internal.GetErrors())
 	if len(res) != 0 {
 		t.Error("failure! expected 0")
 		t.Error(len(res))

@@ -196,12 +196,16 @@ func (mig migConfig) runSingleMigration(s *migration, direction string) {
 	log.Println("Currently executing: " + s.id)
 	_, err := mig.Sql.Exec(string(migrationFile))
 	if err != nil {
+
 		internal.AddError(err)
 		return
 	}
 
-	_, err = mig.Sql.Exec(getInsertNewEntryByDialect(mig.dialect), s.state)
-	internal.AddError(err)
+	_, err = mig.Sql.Exec(getInsertNewEntryByDialect(mig.dialect), s.id)
+	if err != nil {
+		internal.AddError(err)
+		return
+	}
 }
 
 // Gets a list of all migration files in dir
