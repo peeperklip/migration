@@ -26,11 +26,16 @@ func addQueryStatements(dbms string, statement string) {
 }
 
 func setUp(dbms string) *dbUtil {
+	wasConfigured := false
 	for index, _ := range creationStatements {
 		if index == dbms {
+			wasConfigured = true
 			break
 		}
 
+	}
+
+	if !wasConfigured {
 		panic(fmt.Sprintf("DBMS %s was not configured", dbms))
 	}
 

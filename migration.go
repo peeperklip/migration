@@ -126,7 +126,7 @@ func (mig migConfig) getRanMigrations() []migration {
 
 	var ranMigrations []migration
 
-	result, err := mig.Sql.Query(QueryForRanMigrations(mig.dialect))
+	result, err := mig.Sql.Query(getQueryForGettingMigrations(mig.dialect))
 
 	if err != nil {
 		internal.AddError(err)
@@ -200,7 +200,7 @@ func (mig migConfig) runSingleMigration(s *migration, direction string) {
 		return
 	}
 
-	_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), s.state)
+	_, err = mig.Sql.Exec(getInsertNewEntryByDialect(mig.dialect), s.state)
 	internal.AddError(err)
 }
 
@@ -296,7 +296,7 @@ func (mig migConfig) readFile(migrationFile string, direction string) []byte {
 }
 
 func (mig migConfig) ensureTableExists() {
-	_, err := mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
+	_, err := mig.Sql.Exec(getCreateTableByDialect(mig.dialect))
 	if err != nil {
 		internal.AddError(err)
 	}

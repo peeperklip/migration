@@ -56,13 +56,13 @@ func TestGenerateMigration(t *testing.T) {
 }
 
 func TestMigration_GenerateMigration(t *testing.T) {
-	mig, _ := setUp("testing_data/")
+	mig, _ := setUpTesting("testing_data/")
 
 	_ = exec.Command("cp", "--recursive", "testing_data", ".")
 
 	mig.RunMigrations()
 
-	result, err := mig.Sql.Query(QueryForRanMigrations(mig.dialect))
+	result, err := mig.Sql.Query(getQueryForGettingMigrations(mig.dialect))
 
 	if err != nil {
 		t.Error("Failure")
@@ -82,7 +82,7 @@ func TestMigration_GenerateMigration(t *testing.T) {
 }
 
 func TestMigration_GetAllMigrations(t *testing.T) {
-	mig, _ := setUp("")
+	mig, _ := setUpTesting("")
 
 	mig.GenerateMigration()
 	mig.GenerateMigration()
@@ -99,7 +99,7 @@ func TestMigration_GetAllMigrations(t *testing.T) {
 
 func TestMigration_GetUnRanMigrations(t *testing.T) {
 
-	mig, _ := setUp("")
+	mig, _ := setUpTesting("")
 	mig.GenerateMigration()
 	res := mig.GetUnRanMigrations()
 	if len(res) != 1 {
@@ -124,7 +124,7 @@ func tearDown() {
 	internal.FlushErros()
 }
 
-func setUp(baseDir string) (migConfig, error) {
+func setUpTesting(baseDir string) (migConfig, error) {
 	_, err := os.Create("database.db")
 	db, err := sql.Open("sqlite3", "database.db")
 
@@ -133,6 +133,8 @@ func setUp(baseDir string) (migConfig, error) {
 		dialect: "sqlite3",
 		Sql:     db,
 	}
+
+	setUp("sqlite3")
 
 	return mig, err
 }
