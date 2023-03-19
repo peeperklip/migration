@@ -2,7 +2,6 @@ package migrations
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"github.com/peeperklip/migration/internal"
 	"log"
@@ -24,6 +23,12 @@ var stateMap = [3]string{"RAN", "UNRAN", "REVERTED"}
 type migration struct {
 	id    string
 	state string
+}
+
+func (mig migConfig) initialize() {
+	mig.ensureDirExists("")
+	mig.ensureDirExists("migrations")
+	mig.ensureTableExists()
 }
 
 func createNewMigration(migrationId string, stateString string) migration {
@@ -59,8 +64,6 @@ func (migration *migration) setState(stateString string) {
 // 1677431029
 
 func loadMigrations(migrator migConfig) []migration {
-	migrator.ensureDirExists("migrations")
-	migrator.ensureTableExists()
 	miglist := make([]migration, 0)
 	ranMigs := migrator.getRanMigrations()
 	allMigs := migrator.getAllMigrations()
@@ -135,7 +138,6 @@ func (mig migConfig) getRanMigrations() []migration {
 
 	defer func(result *sql.Rows) {
 		err = result.Close()
-		internal.AddError(errors.New("error when selecting migrations"))
 		internal.AddError(err)
 	}(result)
 
@@ -166,8 +168,6 @@ func (mig migConfig) GenerateMigration() {
 	currentTimestamp := strconv.FormatInt(time.Now().Unix(), 10)
 	migrationDirName := fmt.Sprintf("migrations/%s", currentTimestamp)
 
-	mig.ensureDirExists("")
-	mig.ensureDirExists("migrations")
 	mig.ensureDirExists(migrationDirName)
 
 	upMigFilename := fmt.Sprintf("%s/up.sql", migrationDirName)
@@ -207,7 +207,6 @@ func (mig migConfig) runSingleMigration(s *migration, direction string) {
 // Gets a list of all migration files in dir
 func (mig migConfig) getAllMigrations() []string {
 	var migrations = make([]string, 0)
-	mig.ensureDirExists("migrations")
 	dir, err := mig.readDir("migrations")
 	if err != nil {
 		debug.PrintStack()

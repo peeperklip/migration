@@ -23,6 +23,7 @@ func TestGenerateMigration(t *testing.T) {
 		dialect: "sqlite3",
 		Sql:     db,
 	}
+	mig.initialize()
 
 	mig.GenerateMigration()
 
@@ -135,6 +136,6 @@ func setUpTesting(baseDir string) (migConfig, error) {
 	}
 
 	setUp("sqlite3")
-
+	mig.initialize()
 	return mig, err
 }
