@@ -13,7 +13,7 @@ import (
 )
 
 type migConfig struct {
-	Sql     *sql.DB
+	sql     *sql.DB
 	dialect string
 	baseDir string
 }
@@ -92,7 +92,7 @@ func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
 	if baseDir != "" && baseDir[len(baseDir)-1:] != "/" {
 		baseDir += "/"
 	}
-	mc := &migConfig{Sql: sql, dialect: dialect, baseDir: baseDir}
+	mc := &migConfig{sql: sql, dialect: dialect, baseDir: baseDir}
 	mc.initialize()
 
 	return mc
@@ -133,7 +133,7 @@ func (mig migConfig) getRanMigrations() []migration {
 
 	var ranMigrations []migration
 
-	result, err := mig.Sql.Query(getQueryForGettingMigrations(mig.dialect))
+	result, err := mig.sql.Query(getQueryForGettingMigrations(mig.dialect))
 
 	if err != nil {
 		internal.AddError(err)
@@ -198,14 +198,14 @@ func (mig migConfig) runSingleMigration(s *migration, direction string) {
 	migrationFile := mig.readFile(s.id, direction)
 
 	log.Println("Currently executing: " + s.id)
-	_, err := mig.Sql.Exec(string(migrationFile))
+	_, err := mig.sql.Exec(string(migrationFile))
 	if err != nil {
 
 		internal.AddError(err)
 		return
 	}
 
-	_, err = mig.Sql.Exec(getInsertNewEntryByDialect(mig.dialect), s.id)
+	_, err = mig.sql.Exec(getInsertNewEntryByDialect(mig.dialect), s.id)
 	if err != nil {
 		internal.AddError(err)
 		return
@@ -303,7 +303,7 @@ func (mig migConfig) readFile(migrationFile string, direction string) []byte {
 }
 
 func (mig migConfig) ensureTableExists() {
-	_, err := mig.Sql.Exec(getCreateTableByDialect(mig.dialect))
+	_, err := mig.sql.Exec(getCreateTableByDialect(mig.dialect))
 	if err != nil {
 		internal.AddError(err)
 	}

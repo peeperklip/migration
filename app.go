@@ -59,19 +59,23 @@ func (d down) run(migconfig migConfig, arguments []string) {
 	migconfig.down()
 }
 
-func Init(migrate migConfig, command string) {
+func Init(migrate migConfig) {
 	args := os.Args
 
-	for index, _ := range creationStatements {
-		if index == command {
-			break
-		}
-
+	if len(args) == 0 {
 		outputHelpText()
-		panic("This command is not supported")
+		return
 	}
 
-	commands[command].run(migrate, args)
+	for registeredCommand := range commands {
+		if registeredCommand == args[1] {
+			commands[registeredCommand].run(migrate, args)
+			return
+		}
+
+	}
+	panic("This command is not supported")
+
 }
 
 func outputHelpText() {
