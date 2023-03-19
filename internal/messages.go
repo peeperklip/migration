@@ -12,3 +12,6 @@ func AddError(err error) {
 func GetErrors() []error {
 	return errorMessages
 }
+func FlushErros() {
+	errorMessages = make([]error, 0)
+}

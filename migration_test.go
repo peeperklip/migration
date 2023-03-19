@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/peeperklip/migration/internal"
 	"os"
 	"os/exec"
 	"regexp"
@@ -66,6 +67,7 @@ func TestMigration_GenerateMigration(t *testing.T) {
 	if err != nil {
 		t.Error("Failure")
 		t.Error(err)
+		t.Error(internal.GetErrors())
 	}
 
 	defer func(result *sql.Rows) {
@@ -101,13 +103,16 @@ func TestMigration_GetUnRanMigrations(t *testing.T) {
 	mig.GenerateMigration()
 	res := mig.GetUnRanMigrations()
 	if len(res) != 1 {
-		t.Error("failure!")
+		t.Error("failure! expected 1")
 	}
 
 	mig.RunMigrations()
 	res = mig.GetUnRanMigrations()
+
+	t.Error(internal.GetErrors())
 	if len(res) != 0 {
-		t.Error("failure!")
+		t.Error("failure! expected 0")
+		t.Error(len(res))
 	}
 
 	defer tearDown()
@@ -116,6 +121,7 @@ func TestMigration_GetUnRanMigrations(t *testing.T) {
 func tearDown() {
 	_ = os.RemoveAll("migrations")
 	_ = os.RemoveAll("database.db")
+	internal.FlushErros()
 }
 
 func setUp(baseDir string) (migConfig, error) {

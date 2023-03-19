@@ -2,8 +2,10 @@ package migrations
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/peeperklip/migration/internal"
+	"log"
 	"os"
 	"regexp"
 	"runtime/debug"
@@ -56,9 +58,9 @@ func (migration *migration) setState(stateString string) {
 // 1677431498
 // 1677431029
 
-// TODO: dont call as config. but as migrator(?)
 func loadMigrations(migrator migConfig) []migration {
 	migrator.ensureDirExists("migrations")
+	migrator.ensureTableExists()
 	miglist := make([]migration, 0)
 	ranMigs := migrator.getRanMigrations()
 	allMigs := migrator.getAllMigrations()
@@ -80,14 +82,14 @@ mainLoop:
 	return miglist
 }
 
-func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
-	//Append a '/' if the string is not empty and doesn't already end with a '/'.
-	//This is to avoid files/dirs are created/read in and from unexpected places
-	if baseDir != "" && baseDir[len(baseDir)-1:] != "/" {
-		baseDir += "/"
-	}
-	return &migConfig{Sql: sql, dialect: dialect, baseDir: baseDir}
-}
+//func NewMigration(sql *sql.DB, dialect string, baseDir string) *migConfig {
+//	//Append a '/' if the string is not empty and doesn't already end with a '/'.
+//	//This is to avoid files/dirs are created/read in and from unexpected places
+//	if baseDir != "" && baseDir[len(baseDir)-1:] != "/" {
+//		baseDir += "/"
+//	}
+//	return &migConfig{Sql: sql, dialect: dialect, baseDir: baseDir}
+//}
 
 func (mig migConfig) Down() {
 	var biggest int
@@ -133,6 +135,7 @@ func (mig migConfig) getRanMigrations() []migration {
 
 	defer func(result *sql.Rows) {
 		err = result.Close()
+		internal.AddError(errors.New("error when selecting migrations"))
 		internal.AddError(err)
 	}(result)
 
@@ -150,7 +153,7 @@ func (mig migConfig) getRanMigrations() []migration {
 
 func (mig migConfig) HasMigrationRan(migrationToCheck string) bool {
 	for _, item := range mig.getRanMigrations() {
-		if item == migrationToCheck {
+		if item.id == migrationToCheck {
 			return true
 		}
 	}
@@ -190,15 +193,12 @@ func (mig migConfig) RunMigrations() {
 func (mig migConfig) runSingleMigration(s *migration, direction string) {
 	migrationFile := mig.readFile(s.id, direction)
 
-	fmt.Println("Currently executing: " + s.id)
+	log.Println("Currently executing: " + s.id)
 	_, err := mig.Sql.Exec(string(migrationFile))
 	if err != nil {
 		internal.AddError(err)
 		return
 	}
-
-	_, err = mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
-	internal.AddError(err)
 
 	_, err = mig.Sql.Exec(InsertNewEntry(mig.dialect), s.state)
 	internal.AddError(err)
@@ -240,7 +240,7 @@ func (mig migConfig) GetUnRanMigrations() []string {
 	for i := 0; i < len(allMigs); i++ {
 		appendItem := true
 		for x := 0; x < len(ranMigs); x++ {
-			if ranMigs[x] == allMigs[i] {
+			if ranMigs[x].id == allMigs[i] {
 				appendItem = false
 			}
 		}
@@ -256,11 +256,11 @@ func (mig migConfig) GetUnRanMigrations() []string {
 func (mig migConfig) Status() {
 	unranMigs := mig.GetUnRanMigrations()
 	if len(unranMigs) == 0 {
-		fmt.Println("all migrations have been ran")
+		log.Println("all migrations have been ran")
 		return
 	}
-	fmt.Println("these migrations were not ran")
-	fmt.Println(unranMigs)
+	log.Println("these migrations were not ran")
+	log.Println(unranMigs)
 }
 
 // Consider moving to its own context (file and receiver)
@@ -278,7 +278,7 @@ func (mig migConfig) createEmptyFile(filePath string) {
 	_, err := os.Create(filePath)
 
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 }
 
@@ -290,7 +290,14 @@ func (mig migConfig) readDir(dir string) ([]os.DirEntry, error) {
 func (mig migConfig) readFile(migrationFile string, direction string) []byte {
 	migrationFileContents, err := os.ReadFile(fmt.Sprintf("%s%s/%s/%s.sql", mig.baseDir, "migrations", migrationFile, direction))
 	if err != nil {
-		fmt.Println(err)
+		log.Println(err)
 	}
 	return migrationFileContents
+}
+
+func (mig migConfig) ensureTableExists() {
+	_, err := mig.Sql.Exec(GetCreateTableByDialect(mig.dialect))
+	if err != nil {
+		internal.AddError(err)
+	}
 }
