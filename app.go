@@ -47,7 +47,7 @@ func (s status) run(migconfig migConfig, arguments []string) {
 func (r revert) run(migconfig migConfig, arguments []string) {
 	if len(arguments) == 2 {
 		outputHelpText()
-		panic("No migConfig given to revert")
+		panic("No migration given to revert")
 	}
 
 	requestedMigration := arguments[2]
@@ -59,6 +59,7 @@ func (d down) run(migconfig migConfig, arguments []string) {
 	migconfig.down()
 }
 
+// Init is upposed to be called from the package this package is used in
 func Init(migrate migConfig) {
 	args := os.Args
 

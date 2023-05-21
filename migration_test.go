@@ -12,16 +12,21 @@ import (
 )
 
 func TestGenerateMigration(t *testing.T) {
+	tearDown()
 	_, err := os.Create("database.db")
 	if err != nil {
 		t.Error("Could not create a database to start testing with")
 	}
+
 	db, err := sql.Open("sqlite3", "database.db")
 
+	if err != nil {
+		t.Error("Could not open DB")
+	}
 	mig := migConfig{
 		baseDir: "",
 		dialect: "sqlite3",
-		Sql:     db,
+		sql:     db,
 	}
 	mig.initialize()
 
@@ -52,8 +57,7 @@ func TestGenerateMigration(t *testing.T) {
 	}
 
 	mig.runMigrations()
-
-	defer tearDown()
+	tearDown()
 }
 
 func TestMigration_GenerateMigration(t *testing.T) {
@@ -63,7 +67,7 @@ func TestMigration_GenerateMigration(t *testing.T) {
 
 	mig.runMigrations()
 
-	result, err := mig.Sql.Query(getQueryForGettingMigrations(mig.dialect))
+	result, err := mig.sql.Query(getQueryForGettingMigrations(mig.dialect))
 
 	if err != nil {
 		t.Error("Failure")
@@ -117,7 +121,6 @@ func TestMigration_GetUnRanMigrations(t *testing.T) {
 
 	defer tearDown()
 }
-
 func tearDown() {
 	_ = os.RemoveAll("migrations")
 	_ = os.RemoveAll("database.db")

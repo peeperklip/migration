@@ -70,7 +70,7 @@ func loadMigrations(migrator migConfig) []migration {
 	allMigs := migrator.getAllMigrations()
 
 mainLoop:
-	for _, mig := range allMigs {
+	for _, mig := range allMigs { //debug this pice, somehow it doesnt continue in some cases
 		for _, ranMig := range ranMigs {
 			if ranMig.id == mig {
 				continue mainLoop
@@ -189,6 +189,10 @@ func (mig migConfig) runMigrations() {
 			continue
 		}
 
+		if m.state == "RAN" {
+			continue
+		}
+
 		mig.runSingleMigration(&m, "up")
 	}
 
@@ -303,7 +307,9 @@ func (mig migConfig) readFile(migrationFile string, direction string) []byte {
 }
 
 func (mig migConfig) ensureTableExists() {
-	_, err := mig.sql.Exec(getCreateTableByDialect(mig.dialect))
+	dlct := mig.dialect
+	sql := getCreateTableByDialect(dlct)
+	_, err := mig.sql.Exec(sql)
 	if err != nil {
 		internal.AddError(err)
 	}
