@@ -15,10 +15,3 @@ func GetErrors() []error {
 func FlushErros() {
 	errorMessages = make([]error, 0)
 }
-
-//var buf = bytes.Buffer{}
-//
-//func b_addError(w io.WriteCloser) {
-//	w.Write()
-//	w.Close()
-//}

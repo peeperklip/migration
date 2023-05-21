@@ -58,29 +58,26 @@ func (migration *migration) setState(stateString string) {
 	//Trigger error?
 }
 
-// table > migration
-// 1676928405
-// 1677431029
-// 1677431498
-// 1677431029
+func hasMigrationRan(migrationId string, ranMigrations []migration) bool {
+	for _, val := range ranMigrations {
+		if val.id == migrationId {
+			return true
+		}
+	}
+	return false
+}
 
 func loadMigrations(migrator migConfig) []migration {
 	miglist := make([]migration, 0)
 	ranMigs := migrator.getRanMigrations()
 	allMigs := migrator.getAllMigrations()
 
-mainLoop:
-	for _, mig := range allMigs { //debug this pice, somehow it doesnt continue in some cases
-		for _, ranMig := range ranMigs {
-			if ranMig.id == mig {
-				continue mainLoop
-			}
+	for _, mig := range allMigs {
+		if hasMigrationRan(mig, ranMigs) {
+			miglist = append(miglist, createNewMigration(mig, "RAN"))
+		} else {
+			miglist = append(miglist, createNewMigration(mig, "UNRAN"))
 		}
-
-		//The migrations that have been ran before already had their statusses and are bing tracked
-		//The untracked ones are by definition unran
-		miglist = append(miglist, createNewMigration(mig, "UNRAN"))
-
 	}
 
 	return miglist
@@ -201,7 +198,7 @@ func (mig migConfig) runMigrations() {
 func (mig migConfig) runSingleMigration(s *migration, direction string) {
 	migrationFile := mig.readFile(s.id, direction)
 
-	log.Println("Currently executing: " + s.id)
+	//log.Println("Currently executing: " + s.id)
 	_, err := mig.sql.Exec(string(migrationFile))
 	if err != nil {
 

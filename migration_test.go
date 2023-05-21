@@ -67,6 +67,12 @@ func TestMigration_GenerateMigration(t *testing.T) {
 
 	mig.runMigrations()
 
+	mig.generateMigration()
+
+	if len(mig.getUnRanMigrations()) != 1 {
+		t.Error("Expected 1 migration to be present")
+	}
+
 	result, err := mig.sql.Query(getQueryForGettingMigrations(mig.dialect))
 
 	if err != nil {
@@ -103,7 +109,6 @@ func TestMigration_GetAllMigrations(t *testing.T) {
 }
 
 func TestMigration_GetUnRanMigrations(t *testing.T) {
-
 	mig, _ := setUpTesting("")
 	mig.generateMigration()
 	res := mig.getUnRanMigrations()
