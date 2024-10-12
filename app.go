@@ -1,10 +1,12 @@
 package migrations
 
 import (
+	"database/sql"
 	"fmt"
-	_ "github.com/lib/pq"
 	"os"
 	"text/tabwriter"
+
+	_ "github.com/lib/pq"
 )
 
 type commandInterface interface {
@@ -76,7 +78,11 @@ func Init(migrate migConfig) {
 
 	}
 	panic("This command is not supported")
+}
 
+func Migrate(sql *sql.DB, dialect string, baseDir string) {
+	m := NewMigration(sql, dialect, baseDir)
+	commands["migrate"].run(*m, []string{})
 }
 
 func outputHelpText() {
